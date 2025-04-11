@@ -1,0 +1,15 @@
+[Unit]
+Description=Varnishlog to Elasticsearch
+After=network.target
+
+[Service]
+Type=simple
+User=varnish
+Group=varnish
+EnvironmentFile=/etc/varnishlog-to-es.env
+ExecStart=/usr/bin/varnishlog -g request | /path/to/varnishlog-to-elasticsearch/bin/varnishlog-to-es
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
