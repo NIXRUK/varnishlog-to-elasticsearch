@@ -220,8 +220,6 @@ def main_loop(input_stream) -> None:
                 continue
             if key == "x-production":
                 doc["env"] = value
-            elif key == "x-forwarded-for" and "client_ip" not in doc:
-                doc["client_ip"] = value.split(",")[0]
             elif key == "user-agent" and "user_agent" not in doc:
                 doc["user_agent"] = value
             elif key == "host" and "request_host" not in doc:
@@ -245,6 +243,10 @@ def main_loop(input_stream) -> None:
                 doc["backend_status"] = int(tag_line.split("BerespStatus")[1].strip())
             except Exception as e:
                 debug(f"BerespStatus parse error: {str(e)}")
+        elif tag_line.startswith("ReqStart"):
+            parts = tag_line.split("ReqStart", 1)[1].strip().split()
+            if parts:
+                doc["client_ip"] = parts[0]
 
     # Flush any remaining documents
     document_buffer.flush() 

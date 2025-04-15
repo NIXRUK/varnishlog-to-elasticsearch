@@ -5,7 +5,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="varnishlog-to-elasticsearch",
-    version="0.1.0",
+    version="0.2.0",
     author="Will Riches",
     author_email="will@nixr.com",
     description="A tool to parse Varnish HTTP logs and send them to Elasticsearch",
