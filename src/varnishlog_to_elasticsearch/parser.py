@@ -94,16 +94,21 @@ class DocumentBuffer:
             now = datetime.now().strftime('%Y_%m_%d')
             index = f"varnish_log_{env_type}_{now}"
 
-            # Prepare bulk request
-            bulk_data = []
+            # Prepare bulk request - as NDJSON (Newline Delimited JSON)
+            bulk_data_lines = []
             for doc in self.buffer:
-                bulk_data.append({"index": {"_index": index}})
-                bulk_data.append(doc)
+                bulk_data_lines.append(json.dumps({"index": {"_index": index}}))
+                bulk_data_lines.append(json.dumps(doc))
+            
+            # Ensure the request ends with a newline character as required by the Bulk API
+            bulk_data = "\n".join(bulk_data_lines) + "\n"
 
             url = f"{ES_BASE_URL}/_bulk"
+            headers = {"Content-Type": "application/x-ndjson"}
             response = requests.post(
                 url,
-                json=bulk_data,
+                data=bulk_data,  # Use data instead of json to send NDJSON
+                headers=headers,
                 auth=HTTPBasicAuth(ES_USERNAME, ES_PASSWORD),
                 verify=ES_VERIFY_SSL,
                 timeout=10
