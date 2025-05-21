@@ -27,6 +27,24 @@ ES_FLUSH_INTERVAL = int(os.getenv('ES_FLUSH_INTERVAL', '5'))  # seconds
 if not ES_VERIFY_SSL:
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+def format_request_error(e: Exception, operation: str) -> str:
+    """Format error message with response body if available.
+    
+    Args:
+        e: The exception that occurred
+        operation: Description of the operation that failed
+        
+    Returns:
+        str: Formatted error message
+    """
+    error_msg = str(e)
+    if isinstance(e, requests.exceptions.RequestException) and hasattr(e, 'response') and e.response is not None:
+        try:
+            error_msg += f"\nResponse body: {e.response.text}"
+        except Exception:
+            pass  # If we can't get the response text, just use the original error
+    return f"{operation} error: {error_msg}"
+
 @dataclass
 class BufferConfig:
     """Configuration for document buffering."""
@@ -93,7 +111,7 @@ class DocumentBuffer:
             response.raise_for_status()
             debug(f"Bulk posted {len(self.buffer)} documents to {index}: {response.status_code}")
         except Exception as e:
-            debug(f"Bulk POST error: {str(e)}")
+            debug(format_request_error(e, "Bulk POST"))
         finally:
             self.buffer = []
             self.config.last_flush = time.time()
