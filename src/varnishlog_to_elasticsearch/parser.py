@@ -203,7 +203,7 @@ def main_loop(input_stream) -> None:
                 env_val = doc.get("env", "false")
                 env_type = "prod" if env_val.lower() == "true" else "stage"
                 doc["env"] = env_type
-                doc["timestamp"] = datetime.now().astimezone().isoformat()
+                doc["@timestamp"] = datetime.now().astimezone().isoformat()
                 
                 for field in ["backend_url", "backend_host", "backend_method", "backend_status"]:
                     doc.setdefault(field, None)
