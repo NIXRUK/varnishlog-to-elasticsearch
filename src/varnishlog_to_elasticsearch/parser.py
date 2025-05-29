@@ -205,7 +205,7 @@ def main_loop(input_stream) -> None:
                 doc["env"] = env_type
                 doc["@timestamp"] = datetime.now().astimezone().isoformat()
                 
-                for field in ["backend_url", "backend_host", "backend_method", "backend_status"]:
+                for field in ["backend_url", "backend_host", "backend_method", "backend_status", "backend_reason"]:
                     doc.setdefault(field, None)
                 
                 document_buffer.add(doc)
@@ -266,6 +266,8 @@ def main_loop(input_stream) -> None:
                 doc["backend_status"] = int(tag_line.split("BerespStatus")[1].strip())
             except Exception as e:
                 debug(f"BerespStatus parse error: {str(e)}")
+        elif tag_line.startswith("BerespReason"):
+            doc["backend_reason"] = tag_line.split("BerespReason")[1].strip()
         elif tag_line.startswith("ReqStart"):
             parts = tag_line.split("ReqStart", 1)[1].strip().split()
             if parts:
