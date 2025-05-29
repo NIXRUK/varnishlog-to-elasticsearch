@@ -14,6 +14,7 @@ import urllib3
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from datetime import datetime
+from collections import defaultdict
 
 # Get configuration from environment variables with fallbacks
 ES_BASE_URL = os.getenv('ES_BASE_URL', 'http://localhost:9200')
@@ -84,37 +85,36 @@ class DocumentBuffer:
         return (time.time() - self.config.last_flush) >= self.config.flush_interval
 
     def flush(self) -> None:
-        """Flush the buffer to Elasticsearch."""
         if not self.buffer:
             return
 
         try:
-            # Create index name based on the first document's environment
-            env_type = self.buffer[0].get("env", "stage")
-            now = datetime.now().strftime('%Y_%m_%d')
-            index = f"varnish_log_{env_type}_{now}"
-
-            # Prepare bulk request - as NDJSON (Newline Delimited JSON)
-            bulk_data_lines = []
+            grouped_docs = defaultdict(list)
             for doc in self.buffer:
-                bulk_data_lines.append(json.dumps({"index": {"_index": index}}))
-                bulk_data_lines.append(json.dumps(doc))
-            
-            # Ensure the request ends with a newline character as required by the Bulk API
-            bulk_data = "\n".join(bulk_data_lines) + "\n"
+                env_type = doc.get("env", "stage")
+                grouped_docs[env_type].append(doc)
 
-            url = f"{ES_BASE_URL}/_bulk"
-            headers = {"Content-Type": "application/x-ndjson"}
-            response = requests.post(
-                url,
-                data=bulk_data,  # Use data instead of json to send NDJSON
-                headers=headers,
-                auth=HTTPBasicAuth(ES_USERNAME, ES_PASSWORD),
-                verify=ES_VERIFY_SSL,
-                timeout=10
-            )
-            response.raise_for_status()
-            debug(f"Bulk posted {len(self.buffer)} documents to {index}: {response.status_code}")
+            now = datetime.now().strftime('%Y_%m_%d')
+            for env_type, docs in grouped_docs.items():
+                index = f"varnish_log_{env_type}_{now}"
+                bulk_data_lines = []
+                for doc in docs:
+                    bulk_data_lines.append(json.dumps({"index": {"_index": index}}))
+                    bulk_data_lines.append(json.dumps(doc))
+                bulk_data = "\n".join(bulk_data_lines) + "\n"
+
+                url = f"{ES_BASE_URL}/_bulk"
+                headers = {"Content-Type": "application/x-ndjson"}
+                response = requests.post(
+                    url,
+                    data=bulk_data,
+                    headers=headers,
+                    auth=HTTPBasicAuth(ES_USERNAME, ES_PASSWORD),
+                    verify=ES_VERIFY_SSL,
+                    timeout=10
+                )
+                response.raise_for_status()
+                debug(f"Bulk posted {len(docs)} documents to {index}: {response.status_code}")
         except Exception as e:
             debug(format_request_error(e, "Bulk POST"))
         finally:
