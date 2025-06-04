@@ -188,11 +188,6 @@ def main_loop(input_stream) -> None:
     resp_time = None
     inside_request = False
     
-    # Defined in the environment variable DOCKER_HOST_NAME
-    # To be dynamically passed to the container in docker contexts, otherwise omitted
-    if DOCKER_HOST_NAME:
-        doc["docker_host_name"] = DOCKER_HOST_NAME
-
     buffer_config = BufferConfig(
         max_size=ES_BUFFER_SIZE,
         flush_interval=ES_FLUSH_INTERVAL
@@ -219,6 +214,9 @@ def main_loop(input_stream) -> None:
                     document_buffer.flush()
                 
                 doc = {}
+                # Initialize new document with Docker hostname if available
+                if DOCKER_HOST_NAME:
+                    doc["docker_host_name"] = DOCKER_HOST_NAME
                 start_time = None
                 resp_time = None
             inside_request = True
