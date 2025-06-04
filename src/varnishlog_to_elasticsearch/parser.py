@@ -23,6 +23,7 @@ ES_PASSWORD = os.getenv('ES_PASSWORD', '')
 ES_VERIFY_SSL = os.getenv('ES_VERIFY_SSL', 'true').lower() in ('true', '1', 't')
 ES_BUFFER_SIZE = int(os.getenv('ES_BUFFER_SIZE', '100'))
 ES_FLUSH_INTERVAL = int(os.getenv('ES_FLUSH_INTERVAL', '5'))  # seconds
+DOCKER_HOST_NAME = os.getenv('DOCKER_HOST_NAME')  # Optional hostname of the Docker host
 
 # Only disable SSL warnings if explicitly configured to do so
 if not ES_VERIFY_SSL:
@@ -187,6 +188,11 @@ def main_loop(input_stream) -> None:
     resp_time = None
     inside_request = False
     
+    # Defined in the environment variable DOCKER_HOST_NAME
+    # To be dynamically passed to the container in docker contexts, otherwise omitted
+    if DOCKER_HOST_NAME:
+        doc["docker_host_name"] = DOCKER_HOST_NAME
+
     buffer_config = BufferConfig(
         max_size=ES_BUFFER_SIZE,
         flush_interval=ES_FLUSH_INTERVAL
