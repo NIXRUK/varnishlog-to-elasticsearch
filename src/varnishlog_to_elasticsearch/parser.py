@@ -257,6 +257,8 @@ def main_loop(input_stream) -> None:
                 doc["accept_language"] = value
             elif key == "x-cache":
                 doc["cache_status"] = value
+            elif key == "x-real-ip":
+                doc["real_ip"] = value
         elif tag_line.startswith("BereqMethod"):
             doc["backend_method"] = tag_line.split("BereqMethod")[1].strip()
         elif tag_line.startswith("BereqURL"):
